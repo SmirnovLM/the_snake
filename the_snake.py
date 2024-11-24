@@ -3,9 +3,13 @@
 
 Этот модуль реализует классическую игру "Змейка" с использованием Pygame.
 """
+import os
 from random import choice, randint
 
 import pygame
+
+# Файл для записи результата:
+RECORD_FILE = 'record.txt'
 
 # Константы для размеров поля и сетки:
 SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
@@ -150,7 +154,10 @@ def handle_keys(snake):
             pygame.quit()
             raise SystemExit
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP and snake.direction != DOWN:
+            if event.key == pygame.K_ESCAPE:
+                pygame.quit()
+                raise SystemExit
+            elif event.key == pygame.K_UP and snake.direction != DOWN:
                 snake.next_direction = UP
             elif event.key == pygame.K_DOWN and snake.direction != UP:
                 snake.next_direction = DOWN
@@ -160,10 +167,29 @@ def handle_keys(snake):
                 snake.next_direction = RIGHT
 
 
+def read_record():
+    """Считывает рекорд из файла."""
+    if os.path.exists(RECORD_FILE):
+        with open(RECORD_FILE, 'r') as file:
+            try:
+                return int(file.read().strip())
+            except ValueError:
+                pass
+    return 1
+
+
+def save_record(record):
+    """Сохраняет рекорд в файл."""
+    with open(RECORD_FILE, 'w') as file:
+        file.write(str(record))
+
+
 def main():
     """Основной цикл игры."""
     snake = Snake()
     apple = Apple()
+    record_length = read_record()
+    pygame.display.set_caption(f'Змейка | Рекорд: {record_length}')
 
     while True:
         clock.tick(SPEED)
@@ -174,6 +200,11 @@ def main():
         if snake.get_head_position() == apple.position:
             snake.length += 1
             apple.randomize_position()
+
+            if snake.length > record_length:
+                record_length = snake.length
+                save_record(record_length)
+                pygame.display.set_caption(f'Змейка | Рекорд: {record_length}')
 
         screen.fill(BOARD_BACKGROUND_COLOR)
         apple.draw()
